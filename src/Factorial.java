@@ -54,7 +54,7 @@ public class Factorial{
         EighthThread h1 = new EighthThread();
 
         int cores = Runtime.getRuntime().availableProcessors();
-        System.out.println(cores);
+        System.out.println(cores+" logical cores");
 
         BigInteger output = new BigInteger("0");
         boolean loop=true;
@@ -251,6 +251,21 @@ public class Factorial{
         System.out.println("screen res:"+height+" "+width);
         System.out.println("line amounts:"+(rows+1)+" "+columns);
 
+        System.out.println("Wrapping text for display");
+        String string = longMessage.toString();
+        StringBuffer buffer = new StringBuffer();
+
+        for(int i = 0; i < string.length(); i++) {
+            // Append a \n after every 100th character.
+            if((i > 0) && (i % (columns*1.5)) == 0) {
+                buffer.append("\n");
+            }
+            // Just adds the next character to the StringBuffer.
+            buffer.append(string.charAt(i));
+        }
+
+        parsedString = buffer.toString();
+
         SwingUtilities.invokeLater(() -> {
             JTextArea factorialoutput = new JTextArea(rows, columns);
             factorialoutput.setText(parsedString);
@@ -265,7 +280,7 @@ public class Factorial{
 
             JTextArea time = new JTextArea(1, columns);
             time.setText("Operation took " + (System.currentTimeMillis()-timerstart) + " milliseconds");
-            System.out.println((System.currentTimeMillis()-timerstart));
+            System.out.println("finished in "+(System.currentTimeMillis()-timerstart)+" milliseconds.");
             time.setEditable(false);
             time.setLineWrap(true);
 
@@ -285,46 +300,17 @@ public class Factorial{
     public static void writeFile(BigInteger writeoutput) throws IOException{
         String filedir = System.getProperty("user.home") + "\\Desktop\\Factorial.txt";
         File file = new File(filedir);
-        GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-        int width = gd.getDisplayMode().getWidth();
-        int columns = (int) Math.round((90.0/1280.0)*width);
         try {
             PrintWriter writer = new PrintWriter(file, "UTF-8");
 
-            String string = writeoutput.toString();
-            StringBuffer buffer = new StringBuffer();
-
-            for(int i = 0; i < string.length(); i++) {
-                // Append a \n after every 100th character.
-                if((i > 0) && (i % (columns*1.5)) == 0) {
-                    buffer.append("\n");
-                }
-                // Just adds the next character to the StringBuffer.
-                buffer.append(string.charAt(i));
-            }
-
-            parsedString = buffer.toString();
-            writer.write(parsedString);
+            writer.println(writeoutput);
             writer.close();
         } catch (Exception e){
             try {
                 filedir = System.getProperty("user.home") + "/Desktop/Factorial.txt";
                 file = new File(filedir);
                 PrintWriter writer = new PrintWriter(file, "UTF-8");
-                String string = writeoutput.toString();
-                StringBuffer buffer = new StringBuffer();
-
-                for(int i = 0; i < string.length(); i++) {
-                    // Append a \n after every 100th character.
-                    if((i > 0) && (i % (Math.round(columns*1.5))) == 0) {
-                        buffer.append("\n");
-                    }
-                    // Just adds the next character to the StringBuffer.
-                    buffer.append(string.charAt(i));
-                }
-
-                parsedString = buffer.toString();
-                writer.write(parsedString);
+                writer.println(writeoutput);
                 writer.close();
             } catch (Exception e2){}
         }
