@@ -8,8 +8,9 @@ import java.lang.*;
 import javax.swing.table.AbstractTableModel;
 public class Factorial{
 
-    //
+    // initializes other public variables
     public static String parsedString = "";
+    public static int N = 1;
 
     /* initializes variables to tell signal thread completion*/
     public volatile static boolean threadOneDone = true;
@@ -20,6 +21,8 @@ public class Factorial{
     public volatile static boolean threadSixDone = true;
     public volatile static boolean threadSevenDone = true;
     public volatile static boolean threadEightDone = true;
+    public volatile static boolean WriteFileDone = true;
+    public volatile static boolean windowClosed = false;
 
     /* Initializes variables that decide thread workload */
     public static int a1end = 0;
@@ -58,7 +61,6 @@ public class Factorial{
 
         BigInteger output = new BigInteger("0");
         boolean loop=true;
-        int N = 1;
         JFrame frame = new JFrame();
         String displaymessage = "Input number to factorialize";
         while(loop) {
@@ -222,9 +224,18 @@ public class Factorial{
 
 
         System.out.println("Writing file");
-        writeFile(output);
+        long filewritetime = System.currentTimeMillis();
+        //WriteFileThread i1 = new WriteFileThread(output, filewritetime);
+        b.setString("Writing File");
+        if (N>=50000&&cores!=1) {
+            WriteFileDone=false;
+            new WriteFileThread(output).start();
+        } else {
+            writeFile(output);
+            System.out.println("Write completed in "+(System.currentTimeMillis()-filewritetime)+" milliseconds");
+        }
 
-        f.setVisible(false);
+        b.setString("Displaying output");
         System.out.println("Displaying output");
         showLongTextMessageInDialog(output,frame, timerstart);
     }
@@ -242,6 +253,7 @@ public class Factorial{
         return fac;
     }
     private static void showLongTextMessageInDialog(BigInteger longMessage, JFrame frame, long timerstart) {
+        b.setString("Getting display info");
         GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
         int width = gd.getDisplayMode().getWidth();
         int height = gd.getDisplayMode().getHeight();
@@ -252,8 +264,14 @@ public class Factorial{
         System.out.println("line amounts:"+(rows+1)+" "+columns);
 
         System.out.println("Wrapping text for display");
+
+        b.setString("Casting BigInt to String");
         String string = longMessage.toString();
+        b.setString("Creating StringBuffer");
         StringBuffer buffer = new StringBuffer();
+
+        b.setMaximum(string.length());
+        b.setValue(0);
 
         for(int i = 0; i < string.length(); i++) {
             // Append a \n after every 100th character.
@@ -262,39 +280,79 @@ public class Factorial{
             }
             // Just adds the next character to the StringBuffer.
             buffer.append(string.charAt(i));
+            // Increases JProgressBar value
+            b.setValue(i);
+            b.setString("Wrapping line "+Math.round(((i/1.0)/(string.length()/1.0))*100)+"%");
         }
 
+        b.setString("Saving wrapped string");
         parsedString = buffer.toString();
 
         SwingUtilities.invokeLater(() -> {
+            b.setMaximum(100);
+            b.setValue(0);
+            b.setString("Setting main JTextArea");
             JTextArea factorialoutput = new JTextArea(rows, columns);
+            b.setValue(7);
             factorialoutput.setText(parsedString);
+            b.setValue(40);
             factorialoutput.setCaretPosition(0);
+            b.setValue(60);
             factorialoutput.setEditable(false);
+            b.setValue(80);
             factorialoutput.setLineWrap(false);
+            b.setValue(100);
 
+            b.setString("Setting top JTextArea");
+            b.setValue(0);
             JTextArea charlength = new JTextArea(1, columns);
+            b.setValue(25);
             charlength.setText("Contains "+longMessage.toString().length()+" characters.");
+            b.setValue(50);
             charlength.setEditable(false);
+            b.setValue(75);
             charlength.setLineWrap(true);
+            b.setValue(100);
 
+            b.setString("Setting bottom JTextArea");
+            b.setValue(0);
             JTextArea time = new JTextArea(1, columns);
+            b.setValue(20);
             time.setText("Operation took " + (System.currentTimeMillis()-timerstart) + " milliseconds");
+            b.setValue(40);
             System.out.println("finished in "+(System.currentTimeMillis()-timerstart)+" milliseconds.");
+            b.setValue(60);
             time.setEditable(false);
+            b.setValue(80);
             time.setLineWrap(true);
+            b.setValue(100);
 
+            b.setString("Setting JScrollPane");
+            b.setValue(0);
             JScrollPane scrollPane = new JScrollPane(charlength);
+            b.setValue(11);
             JScrollPane scrollPane2 = new JScrollPane(factorialoutput);
+            b.setValue(22);
             JScrollPane scrollPane3 = new JScrollPane(time);
+            b.setValue(33);
             JPanel panel1 = new JPanel();
+            b.setValue(44);
             panel1.setLayout(new BorderLayout());
+            b.setValue(56);
             panel1.add(scrollPane, BorderLayout.NORTH);
+            b.setValue(67);
             panel1.add(scrollPane2, BorderLayout.CENTER);
+            b.setValue(78);
             panel1.add(scrollPane3, BorderLayout.SOUTH);
+            b.setValue(89);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            b.setValue(100);
+            f.setVisible(false);
             int reply = JOptionPane.showConfirmDialog(frame,panel1, "Factorial:", JOptionPane.DEFAULT_OPTION);
-            System.exit(0);
+            System.out.println("Window closed");
+            if(WriteFileDone){
+                System.exit(0);
+            } else {windowClosed=true;}
         });
     }
     public static void writeFile(BigInteger writeoutput) throws IOException{
@@ -312,7 +370,7 @@ public class Factorial{
                 PrintWriter writer = new PrintWriter(file, "UTF-8");
                 writer.println(writeoutput);
                 writer.close();
-            } catch (Exception e2){}
+            } catch (Exception e2){System.out.println("Cannot write to file directory");}
         }
     }
 
@@ -365,6 +423,7 @@ class FirstThread extends Thread
         for (int counter = 2; counter <= Factorial.a1end; counter++) {
             Factorial.a1output = Factorial.a1output.multiply(BigInteger.valueOf(counter));
             Factorial.b.setValue(counter);
+            Factorial.b.setString("Calculating "+Math.round(((counter/1.0)/(Factorial.a1end/1.0))*100)+"%");
         }
 
         Factorial.threadOneDone = true;
@@ -489,5 +548,39 @@ class EighthThread extends Thread
         Factorial.threadEightDone = true;
 
         System.out.println(" Eighth Thread Finished ");
+    }
+}
+class WriteFileThread extends Thread
+{
+    private BigInteger writeoutput;
+    public WriteFileThread(BigInteger writeoutput) {
+        this.writeoutput = writeoutput;
+    }
+
+
+    public void run()
+    {
+        long filewritetime = System.currentTimeMillis();
+        String filedir = System.getProperty("user.home") + "\\Desktop\\Factorial.txt";
+        File file = new File(filedir);
+        try {
+            PrintWriter writer = new PrintWriter(file, "UTF-8");
+
+            writer.println(writeoutput);
+            writer.close();
+        } catch (Exception e){
+            try {
+                filedir = System.getProperty("user.home") + "/Desktop/Factorial.txt";
+                file = new File(filedir);
+                PrintWriter writer = new PrintWriter(file, "UTF-8");
+                writer.println(writeoutput);
+                writer.close();
+            } catch (Exception e2){System.out.println("Cannot write to file directory");}
+        }
+        System.out.println("Write completed in "+(System.currentTimeMillis()-filewritetime)+" milliseconds");
+        Factorial.WriteFileDone=true;
+        if (Factorial.windowClosed){
+            System.exit(0);
+        }
     }
 }
