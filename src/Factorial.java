@@ -8,6 +8,11 @@ import java.lang.*;
 import javax.swing.table.AbstractTableModel;
 public class Factorial{
 
+
+    //TODO make ! automatically enter data
+    //TODO don't allow non integers in input
+    
+
     // initializes other public variables
     public static String parsedString = "";
     public static int N = 1;
